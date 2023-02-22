@@ -23,15 +23,21 @@ const fetcher = (): Promise<Response> => {
   );
 };
 
-const useRepoData = () => {
-  return useQuery({
-    queryKey: ["repoData"],
-    queryFn: fetcher,
+type SelectFn<T extends any> = (arg: Response) => T;
+const useRepoData = <T extends any>(theSelectorFn: SelectFn<T>) => {
+  return useQuery<Response, unknown, T>(["repoData"], fetcher, {
+    select: theSelectorFn,
   });
 };
 
+type SelectorResponse = { justTheFirstName: string };
+const theSelectorFn = (data: Response) => ({
+  justTheFirstName: data.firstName,
+});
+
 function Example() {
-  const { isSuccess, data } = useRepoData();
+  // data: SelectorResponse | undefined
+  const { isSuccess, data } = useRepoData<SelectorResponse>(theSelectorFn);
 
   if (!isSuccess) {
     return <>"Loading..."</>;
@@ -39,8 +45,7 @@ function Example() {
 
   return (
     <div>
-      <h1>{data?.firstName}</h1>
-      <p>{data?.lastName}</p>
+      <h1>{data?.justTheFirstName}</h1>
     </div>
   );
 }
